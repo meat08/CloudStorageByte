@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="ru.cloudstorage.client.controllers.RightPanelController">
+
+        <HBox HBox.hgrow="ALWAYS">
+            <TextField fx:id="pathField" editable="false" HBox.hgrow="ALWAYS" visible="false"/>
+            <Button text="Вверх" onAction="#btnPathUpActionR"/>
+        </HBox>
+        <TableView fx:id="filesTable" VBox.vgrow="ALWAYS"/>
+    <properties>
+        <ctrl><fx:reference source="controller"/></ctrl>
+    </properties>
+</VBox>
