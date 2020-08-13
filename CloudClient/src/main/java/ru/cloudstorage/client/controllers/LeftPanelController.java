@@ -17,7 +17,7 @@ public class LeftPanelController extends PanelController {
         try {
             pathField.setText(path.normalize().toAbsolutePath().toString());
             filesTable.getItems().clear();
-            filesTable.getItems().addAll(Files.list(path).map(FileInfo::new).collect(Collectors.toList()));
+            filesTable.getItems().addAll(Files.list(path).filter(Files::isReadable).map(FileInfo::new).collect(Collectors.toList()));
             filesTable.sort();
         } catch (IOException e) {
             Alert alert = new Alert(Alert.AlertType.WARNING, "Не удалось обновить список файлов", ButtonType.OK);
