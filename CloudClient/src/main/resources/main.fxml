@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import javafx.geometry.Insets?>
+<VBox alignment="center" xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="ru.cloudstorage.client.controllers.MainController"
+      prefHeight="400.0" prefWidth="600.0">
+
+    <VBox fx:id="loginBox" alignment="CENTER" style=" -fx-border-color:black; -fx-border-width: 1; -fx-border-style: solid;">
+        <Label fx:id="loginLabel" textFill="red"/>
+        <VBox fx:id="loginBoxInternal" alignment="CENTER">
+            <Label text="Логин:"/>
+            <TextField fx:id="loginField" HBox.hgrow="ALWAYS" maxWidth="300" onAction="#btnLoginAction"/>
+            <Label text="Пароль:" />
+            <PasswordField fx:id="passwordField" HBox.hgrow="ALWAYS" maxWidth="300" onAction="#btnLoginAction"/>
+            <HBox spacing="5" alignment="CENTER">
+                <Button text="Войти" HBox.hgrow="ALWAYS" onAction="#btnLoginAction"/>
+                <Button text="Регистрация" HBox.hgrow="ALWAYS" onAction="#btnShowReg"/>
+                <padding>
+                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                </padding>
+            </HBox>
+        </VBox>
+        <VBox fx:id="regBox" alignment="CENTER" visible="false" managed="false">
+            <Label text="Логин:"/>
+            <TextField fx:id="loginFieldReg" HBox.hgrow="ALWAYS" maxWidth="300" onAction="#btnRegistrationAction"/>
+            <Label text="Пароль:" />
+            <PasswordField fx:id="passwordFieldReg1" HBox.hgrow="ALWAYS" maxWidth="300" onAction="#btnRegistrationAction"/>
+            <Label text="Подтверждение пароля:" />
+            <PasswordField fx:id="passwordFieldReg2" HBox.hgrow="ALWAYS" maxWidth="300" onAction="#btnRegistrationAction"/>
+            <HBox spacing="5" alignment="CENTER">
+                <Button text="Зарегистрироваться" HBox.hgrow="ALWAYS" onAction="#btnRegistrationAction"/>
+                <Button text="Назад" HBox.hgrow="ALWAYS" onAction="#btnHideReg"/>
+                <padding>
+                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                </padding>
+            </HBox>
+        </VBox>
+        <padding>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+        </padding>
+    </VBox>
+
+    <HBox fx:id="tablePanel" VBox.vgrow="ALWAYS" visible="false" managed="false">
+        <fx:include fx:id="leftPanel" source="leftPanel.fxml" HBox.hgrow="ALWAYS" />
+        <fx:include fx:id="rightPanel" source="rightPanel.fxml" HBox.hgrow="ALWAYS" />
+    </HBox>
+
+    <HBox fx:id="buttonBlock" spacing="5" visible="false" managed="false">
+        <Button maxWidth="Infinity" focusTraversable="false" text="Копировать файл" HBox.hgrow="ALWAYS" onAction="#btnCopyAction"/>
+        <Button maxWidth="Infinity" focusTraversable="false" text="Обновить список" HBox.hgrow="ALWAYS" onAction="#btnUpdateAction"/>
+        <Button maxWidth="Infinity" focusTraversable="false" text="Удалить файл" HBox.hgrow="ALWAYS" onAction="#btnDeleteAction"/>
+        <padding>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+        </padding>
+    </HBox>
+    <ProgressBar maxWidth="Infinity" fx:id="progressBar" visible="false" managed="false"/>
+    <Button maxWidth="Infinity" focusTraversable="false" text="Выход из программы" HBox.hgrow="ALWAYS" onAction="#btnExitAction"/>
+
+</VBox>
