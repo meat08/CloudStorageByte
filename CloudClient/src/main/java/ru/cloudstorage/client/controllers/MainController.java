@@ -27,13 +27,13 @@ public class MainController {
     @FXML
     VBox leftPanel, rightPanel;
     @FXML
-    HBox buttonBlock;
+    HBox buttonBlock, progressBox;
     @FXML
     VBox loginBox, loginBoxInternal, regBox;
     @FXML
     HBox tablePanel;
     @FXML
-    Label loginLabel;
+    Label loginLabel, progressLabel, fileLabel;
     @FXML
     TextField loginField, loginFieldReg;
     @FXML
@@ -90,8 +90,7 @@ public class MainController {
         Optional<ButtonType> option = Optional.empty();
         for (FileInfo file : dstPC.filesTable.getItems()) {
             if (file.getFilename().equals(srcPath.getFileName().toString())) {
-                Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Заменить файл в папке назначения?");
-                alert.getDialogPane().setHeaderText(null);
+                Alert alert = showAlert(Alert.AlertType.CONFIRMATION, "Заменить файл в папке назначения?");
                 option = alert.showAndWait();
                 break;
             }
@@ -103,11 +102,11 @@ public class MainController {
         }
         waitProcess();
         if (fromClient) {
-            FileUtilClient.putFileToServer(srcPath, dstPath, progressBar,
+            FileUtilClient.putFileToServer(srcPath, dstPath, progressBar, progressLabel,
                     () -> finishProcess(rightPanelController),
                     this::showServerConnectionError);
         } else {
-            FileUtilClient.getFileFromServer(srcPath, dstPath, progressBar,
+            FileUtilClient.getFileFromServer(srcPath, dstPath, progressBar, progressLabel,
                     () -> finishProcess(leftPanelController),
                     this::showServerConnectionError);
         }
@@ -117,8 +116,7 @@ public class MainController {
         if (checkPanel()) {
             return;
         }
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Действительно удалить файл?");
-        alert.getDialogPane().setHeaderText(null);
+        Alert alert = showAlert(Alert.AlertType.CONFIRMATION, "Действительно удалить файл?");
         Optional<ButtonType> option = alert.showAndWait();
 
         if (option.isPresent()) {
@@ -171,22 +169,22 @@ public class MainController {
     }
 
     private void waitProcess() {
+        fileLabel.setText(dstPath.getFileName().toString());
         buttonBlock.setDisable(true);
-        progressBar.setVisible(true);
-        progressBar.setManaged(true);
+        progressBox.setVisible(true);
+        progressBox.setManaged(true);
     }
 
     private void finishProcess(PanelController panel) {
         panel.updateList(dstPath.getParent());
         buttonBlock.setDisable(false);
-        progressBar.setVisible(false);
-        progressBar.setManaged(false);
+        progressBox.setVisible(false);
+        progressBox.setManaged(false);
     }
 
     private boolean checkPanel() {
         if (leftPanelController.getSelectedFilename() == null && rightPanelController.getSelectedFilename() == null) {
-            Alert alert = new Alert(Alert.AlertType.ERROR, "Ни один файл не был выбран", ButtonType.OK);
-            alert.getDialogPane().setHeaderText(null);
+            Alert alert = showAlert(Alert.AlertType.ERROR, "Ни один файл не был выбран");
             alert.showAndWait();
             return true;
         }
@@ -201,8 +199,7 @@ public class MainController {
             fromClient = false;
         }
         if (srcPC.filesTable.getSelectionModel().getSelectedItem().getType() == FileInfo.FileType.DIRECTORY) {
-            Alert alert = new Alert(Alert.AlertType.ERROR, "Выбрана директория. Выберете файл", ButtonType.OK);
-            alert.getDialogPane().setHeaderText(null);
+            Alert alert = showAlert(Alert.AlertType.ERROR, "Выбрана директория. Выберете файл");
             alert.showAndWait();
             return true;
         }
@@ -212,8 +209,7 @@ public class MainController {
     }
 
     private void showServerConnectionError() {
-        Alert alert = new Alert(Alert.AlertType.ERROR, "Сервер недоступен!", ButtonType.OK);
-        alert.getDialogPane().setHeaderText(null);
+        Alert alert = showAlert(Alert.AlertType.ERROR, "Сервер недоступен!");
         alert.showAndWait();
         buttonBlock.setDisable(false);
         progressBar.setVisible(false);
@@ -227,5 +223,11 @@ public class MainController {
         tablePanel.setManaged(true);
         buttonBlock.setVisible(true);
         buttonBlock.setManaged(true);
+    }
+
+    private Alert showAlert(Alert.AlertType type, String text) {
+        Alert alert = new Alert(type, text);
+        alert.getDialogPane().setHeaderText(null);
+        return alert;
     }
 }

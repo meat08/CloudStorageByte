@@ -2,10 +2,7 @@ package ru.cloudstorage.client.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.application.Platform;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.ProgressBar;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import ru.cloudstorage.client.network.Network;
 import ru.cloudstorage.clientserver.*;
 
@@ -20,7 +17,7 @@ public class FileUtilClient {
     private static final int BUFFER_SIZE = 1024 * 1024 * 10;
     private static ByteBuffer buf;
 
-    public static void putFileToServer(Path src, Path dst, ProgressBar progressBar, WaitCallback callback, ErrorCallback error)  {
+    public static void putFileToServer(Path src, Path dst, ProgressBar progressBar, Label label, WaitCallback callback, ErrorCallback error)  {
         new Thread(() -> {
             try {
                 File srcFile = src.toFile();
@@ -48,8 +45,11 @@ public class FileUtilClient {
                     buf.flip();
                     Network.getInstance().getCurrentChannel().write(buf);
                     buf.clear();
-                    long finalBytesSend = bytesSend;
-                    Platform.runLater(() -> progressBar.setProgress((((float) finalBytesSend / fileSize))));
+                    float finalPercent = (float) bytesSend / fileSize;
+                    Platform.runLater(() -> {
+                        progressBar.setProgress(finalPercent);
+                        label.setText(String.format("%.1f", finalPercent*100) + "%");
+                    });
                 }
                 in.close();
                 byte result = Network.getInstance().getIn().readByte();
@@ -64,7 +64,7 @@ public class FileUtilClient {
         }).start();
     }
 
-    public static void getFileFromServer(Path src, Path dst, ProgressBar progressBar, WaitCallback callback, ErrorCallback error) {
+    public static void getFileFromServer(Path src, Path dst, ProgressBar progressBar, Label label, WaitCallback callback, ErrorCallback error) {
         new Thread(() -> {
             try {
                 int packBufSize = 1 + 4 + src.toString().length();
@@ -90,8 +90,11 @@ public class FileUtilClient {
                     buf.flip();
                     out.getChannel().write(buf);
                     buf.clear();
-                    long finalReadBytes = readBytes;
-                    Platform.runLater(() -> progressBar.setProgress((((float) finalReadBytes / fileSize))));
+                    float finalPercent = (float) readBytes / fileSize;
+                    Platform.runLater(() -> {
+                        progressBar.setProgress(finalPercent);
+                        label.setText(String.format("%.1f", finalPercent*100) + "%");
+                    });
                     out.close();
                 }
                 callback.callback();
