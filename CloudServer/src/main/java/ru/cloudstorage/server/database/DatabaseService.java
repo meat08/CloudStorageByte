@@ -1,12 +1,13 @@
 package ru.cloudstorage.server.database;
 
 import org.apache.log4j.Logger;
+import ru.cloudstorage.server.util.ServerProperties;
 
 import java.sql.*;
 
 public class DatabaseService {
     private Connection connection = null;
-    private static final String URL = "jdbc:sqlite:CloudServer/src/main/java/ru/cloudstorage/server/database/CloudServer.sqlite";
+    private static final String URL = "jdbc:sqlite:" + new ServerProperties().getSqlDir();
     private static final Logger logger = Logger.getLogger(DatabaseService.class);
 
     public void start() {

@@ -1,6 +1,7 @@
 package ru.cloudstorage.client.util;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import javafx.application.Platform;
 import javafx.scene.control.*;
 import ru.cloudstorage.client.network.Network;
@@ -23,7 +24,8 @@ public class FileUtilClient {
                 File srcFile = src.toFile();
                 FileInputStream in = new FileInputStream(srcFile);
                 long fileSize = srcFile.length();
-                int packBufSize = 1 + 4 + dst.toString().length() + 8;
+                byte[] fileNameBytes = dst.toString().getBytes(StandardCharsets.UTF_8);
+                int packBufSize = 1 + 4 + fileNameBytes.length + 8;
                 if (fileSize == 0) {
                     nullFileSizeAlert();
                     in.close();
@@ -32,7 +34,7 @@ public class FileUtilClient {
                 }
                 buf = ByteBuffer.allocate(packBufSize);
                 buf.put(ByteCommand.TO_SERVER_COMMAND);
-                buf.putInt(dst.toString().length());
+                buf.putInt(fileNameBytes.length);
                 buf.put(dst.toString().getBytes());
                 buf.putLong(fileSize);
                 buf.flip();
@@ -67,10 +69,11 @@ public class FileUtilClient {
     public static void getFileFromServer(Path src, Path dst, ProgressBar progressBar, Label label, WaitCallback callback, ErrorCallback error) {
         new Thread(() -> {
             try {
-                int packBufSize = 1 + 4 + src.toString().length();
+                byte[] fileNameBytes = src.toString().getBytes(StandardCharsets.UTF_8);
+                int packBufSize = 1 + 4 + fileNameBytes.length;
                 buf = ByteBuffer.allocate(packBufSize);
                 buf.put(ByteCommand.FROM_SERVER_COMMAND);
-                buf.putInt(src.toString().length());
+                buf.putInt(fileNameBytes.length);
                 buf.put(src.toString().getBytes());
                 buf.flip();
                 Network.getInstance().getCurrentChannel().write(buf);
@@ -107,10 +110,11 @@ public class FileUtilClient {
 
     public static void deleteFileFromServer(Path path) {
         try {
-            int bufSize = 1 + 4 + path.toString().length();
+            byte[] fileNameBytes = path.toString().getBytes(StandardCharsets.UTF_8);
+            int bufSize = 1 + 4 + fileNameBytes.length;
             buf = ByteBuffer.allocate(bufSize);
             buf.put(ByteCommand.DELETE_FILE_COMMAND);
-            buf.putInt(path.toString().length());
+            buf.putInt(fileNameBytes.length);
             buf.put(path.toString().getBytes());
             buf.flip();
             Network.getInstance().getCurrentChannel().write(buf);
@@ -124,10 +128,11 @@ public class FileUtilClient {
     public static void setFileList(TableView<FileInfo> tableView, String path) {
         new Thread(() -> {
             try {
-                int bufSize = 1 + 4 + path.length();
+                byte[] pathBytes = path.getBytes(StandardCharsets.UTF_8);
+                int bufSize = 1 + 4 + pathBytes.length;
                 buf = ByteBuffer.allocate(bufSize);
                 buf.put(ByteCommand.LIST_COMMAND);
-                buf.putInt(path.length());
+                buf.putInt(pathBytes.length);
                 buf.put(path.getBytes());
                 buf.flip();
                 Network.getInstance().getCurrentChannel().write(buf);
@@ -142,9 +147,9 @@ public class FileUtilClient {
                     while (readByte < listSize) {
                         readByte += in.read(fileListBuf);
                     }
-                    ObjectMapper mapper = new ObjectMapper();
+                    Gson gson = new Gson();
                     String listString = new String(fileListBuf, StandardCharsets.UTF_8);
-                    List<FileInfo> fileInfoList = mapper.readValue(listString, mapper.getTypeFactory().constructCollectionType(List.class, FileInfo.class));
+                    List<FileInfo> fileInfoList = gson.fromJson(listString, new TypeToken<List<FileInfo>>(){}.getType());
 
                     Platform.runLater(() -> {
                         tableView.getItems().clear();
