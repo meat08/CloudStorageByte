@@ -11,7 +11,6 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.format.DateTimeFormatter;
 
 public abstract class PanelController {
     @FXML
@@ -69,7 +68,7 @@ public abstract class PanelController {
         }
 
         filesTable.setOnMouseClicked(event -> {
-            if (event.getClickCount() == 2) {
+            if (event.getClickCount() == 2 & getSelectedFilename() != null) {
                 Path path = Paths.get(pathField.getText()).resolve(filesTable.getSelectionModel().getSelectedItem().getFilename());
                 if (Files.isDirectory(path)) {
                     updateList(path);
@@ -99,6 +98,9 @@ public abstract class PanelController {
 
     public String getSelectedFilename() {
         if (!filesTable.isFocused()) {
+            return null;
+        }
+        if (filesTable.getSelectionModel().getSelectedItem() == null) {
             return null;
         }
         return filesTable.getSelectionModel().getSelectedItem().getFilename();
