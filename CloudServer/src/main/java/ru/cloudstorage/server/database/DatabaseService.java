@@ -58,7 +58,7 @@ public class DatabaseService {
             );
             statement.setInt(1, isLogin ? 1 : 0);
             statement.setString(2, login);
-            statement.execute();
+            statement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -103,7 +103,7 @@ public class DatabaseService {
             );
             statement.setString(1, login);
             statement.setString(2, password);
-            statement.execute();
+            statement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -114,7 +114,7 @@ public class DatabaseService {
             PreparedStatement statement = connection.prepareStatement(
                     "UPDATE users SET isLogin = 0"
             );
-            statement.execute();
+            statement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
