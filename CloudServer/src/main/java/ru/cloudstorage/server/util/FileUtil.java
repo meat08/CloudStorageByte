@@ -1,13 +1,11 @@
 package ru.cloudstorage.server.util;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import org.apache.log4j.Logger;
-import ru.cloudstorage.clientserver.ByteCommand;
-import ru.cloudstorage.clientserver.FileInfo;
-import ru.cloudstorage.clientserver.WaitCallback;
+import ru.cloudstorage.clientserver.*;
 import ru.cloudstorage.server.NetworkServer;
 
 import java.io.*;
@@ -23,12 +21,100 @@ public class FileUtil {
     private static final Logger logger = Logger.getLogger(NetworkServer.class);
     private static final int BUFFER_SIZE = 1024 * 1024 * 10;
 
+    private SubState subState;
     private int pathSize;
     private String pathName;
     private long fileSize;
     private long receivedFileSize;
 
-    public String[] createHomeDir(String login) throws IOException {
+    public FileUtil() {
+        this.subState = SubState.IDLE;
+    }
+
+    public void fileList(ChannelHandlerContext ctx, ByteBuf buf, WaitCallback callback) throws IOException {
+        switch (subState) {
+            case PATH_SIZE:
+                if (getPathSize(buf)) {
+                    subState = SubState.PATH_STRING;
+                }
+                break;
+            case PATH_STRING:
+                if (getPathName(buf, false)) {
+                    sendFileList(ctx);
+                    subState = SubState.IDLE;
+                    callback.callback();
+                }
+                break;
+        }
+    }
+
+    public void transferFile(ChannelHandlerContext ctx, ByteBuf buf, boolean isGet, WaitCallback callback) {
+        switch (subState) {
+            case PATH_SIZE:
+                if (getPathSize(buf)) {
+                    subState = SubState.PATH_STRING;
+                }
+                break;
+            case PATH_STRING:
+                if (getPathName(buf, true)) {
+                    if (isGet) {
+                        subState = SubState.FILE_SIZE;
+                    } else {
+                        putFile(ctx,callback);
+                    }
+                }
+                break;
+            case FILE_SIZE:
+                if (getFileSize(buf)) {
+                    subState = SubState.FILE;
+                }
+                break;
+            case FILE:
+                if (isGet) {
+                    getFile(ctx, buf, callback);
+                }
+                break;
+        }
+    }
+
+    public void deleteFile(ByteBuf buf, WaitCallback callback) {
+        switch (subState) {
+            case PATH_SIZE:
+                if (getPathSize(buf)) {
+                    subState = SubState.PATH_STRING;
+                }
+                break;
+            case PATH_STRING:
+                if (getPathName(buf, true)) {
+                    try {
+                        Files.delete(Paths.get(pathName));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    subState = SubState.IDLE;
+                    callback.callback();
+                }
+                break;
+        }
+    }
+
+    public void sendClientDir(ChannelHandlerContext ctx, String login) throws IOException {
+        String[] paths = createHomeDir(login);
+        ByteBuf tmp = Unpooled.buffer();
+        tmp.writeByte(ByteCommand.GET_ROOT_PATH_COMMAND);
+        tmp.writeInt(paths[0].length());
+        tmp.writeBytes(paths[0].getBytes());
+        tmp.writeInt(paths[1].length());
+        tmp.writeBytes(paths[1].getBytes());
+        ctx.writeAndFlush(tmp);
+        tmp.clear();
+    }
+
+    public void setSubState(SubState subState) {
+        this.subState = subState;
+    }
+
+    private String[] createHomeDir(String login) throws IOException {
         Path clientPath;
         String[] paths = new String[2];
         try {
@@ -49,13 +135,13 @@ public class FileUtil {
         return paths;
     }
 
-    public String getFileListJson() throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
+    private String getFileListJson() throws IOException {
+        Gson gson = new Gson();
         List<FileInfo> list = Files.list(Paths.get(pathName)).map(FileInfo::new).collect(Collectors.toList());
-        return mapper.writeValueAsString(list);
+        return gson.toJson(list);
     }
 
-    public void sendFileList(ChannelHandlerContext ctx) throws IOException {
+    private void sendFileList(ChannelHandlerContext ctx) throws IOException {
         String fileList = getFileListJson();
         ByteBuf tmp = Unpooled.buffer();
         tmp.writeByte(ByteCommand.LIST_COMMAND);
@@ -65,19 +151,7 @@ public class FileUtil {
         tmp.clear();
     }
 
-    public void sendClientDir(ChannelHandlerContext ctx, String login) throws IOException {
-        String[] paths = createHomeDir(login);
-        ByteBuf tmp = Unpooled.buffer();
-        tmp.writeByte(ByteCommand.GET_ROOT_PATH_COMMAND);
-        tmp.writeInt(paths[0].length());
-        tmp.writeBytes(paths[0].getBytes());
-        tmp.writeInt(paths[1].length());
-        tmp.writeBytes(paths[1].getBytes());
-        ctx.writeAndFlush(tmp);
-        tmp.clear();
-    }
-
-    public boolean getPathSize(ByteBuf buf) {
+    private boolean getPathSize(ByteBuf buf) {
         if (buf.readableBytes() >= Integer.BYTES) {
             pathSize = buf.readInt();
             return true;
@@ -85,7 +159,7 @@ public class FileUtil {
         return false;
     }
 
-    public boolean getPathName(ByteBuf buf, boolean isFile) {
+    private boolean getPathName(ByteBuf buf, boolean isFile) {
         if (buf.readableBytes() >= pathSize) {
             byte[] passBuf = new byte[pathSize];
             buf.readBytes(passBuf);
@@ -98,7 +172,7 @@ public class FileUtil {
         return false;
     }
 
-    public boolean getFileSize(ByteBuf buf) {
+    private boolean getFileSize(ByteBuf buf) {
         if (buf.readableBytes() >= Long.BYTES) {
             fileSize = buf.readLong();
             receivedFileSize = -1;
@@ -107,7 +181,7 @@ public class FileUtil {
         return false;
     }
 
-    public void getFile(ChannelHandlerContext ctx, ByteBuf buf, WaitCallback callback) {
+    private void getFile(ChannelHandlerContext ctx, ByteBuf buf, WaitCallback callback) {
         boolean append = true;
         if (receivedFileSize == -1) {
             append = false;
@@ -117,6 +191,7 @@ public class FileUtil {
             if (fileSize == 0) {
                 sendFinish(ctx);
                 callback.callback();
+                subState = SubState.IDLE;
             }
             while (buf.readableBytes() > 0) {
                 int write = out.getChannel().write(buf.nioBuffer());
@@ -125,6 +200,7 @@ public class FileUtil {
                 if (receivedFileSize == fileSize) {
                     sendFinish(ctx);
                     callback.callback();
+                    subState = SubState.IDLE;
                     break;
                 }
             }
@@ -133,7 +209,7 @@ public class FileUtil {
         }
     }
 
-    public void putFile(ChannelHandlerContext ctx, WaitCallback callback) {
+    private void putFile(ChannelHandlerContext ctx, WaitCallback callback) {
         new Thread(() -> {
             try {
                 File srcFile = Paths.get(pathName).toFile();
@@ -152,18 +228,11 @@ public class FileUtil {
                 }
                 in.close();
                 callback.callback();
+                subState = SubState.IDLE;
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }).start();
-    }
-
-    public void deleteFile() {
-        try {
-            Files.delete(Paths.get(pathName));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     private void sendFinish(ChannelHandlerContext ctx) {

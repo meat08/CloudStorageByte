@@ -1,12 +1,13 @@
 package ru.cloudstorage.server.database;
 
 import org.apache.log4j.Logger;
+import ru.cloudstorage.server.util.ServerProperties;
 
 import java.sql.*;
 
 public class DatabaseService {
     private Connection connection = null;
-    private static final String URL = "jdbc:sqlite:CloudServer/src/main/java/ru/cloudstorage/server/database/CloudServer.sqlite";
+    private static final String URL = "jdbc:sqlite:" + new ServerProperties().getSqlDir();
     private static final Logger logger = Logger.getLogger(DatabaseService.class);
 
     public void start() {
@@ -57,7 +58,7 @@ public class DatabaseService {
             );
             statement.setInt(1, isLogin ? 1 : 0);
             statement.setString(2, login);
-            statement.execute();
+            statement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -102,7 +103,7 @@ public class DatabaseService {
             );
             statement.setString(1, login);
             statement.setString(2, password);
-            statement.execute();
+            statement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -113,7 +114,7 @@ public class DatabaseService {
             PreparedStatement statement = connection.prepareStatement(
                     "UPDATE users SET isLogin = 0"
             );
-            statement.execute();
+            statement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }

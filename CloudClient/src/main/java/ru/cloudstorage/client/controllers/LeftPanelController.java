@@ -15,6 +15,7 @@ public class LeftPanelController extends PanelController {
     @Override
     public void updateList(Path path) {
         try {
+            disksBox.getSelectionModel().select(path.toAbsolutePath().getRoot().toString());
             pathField.setText(path.normalize().toAbsolutePath().toString());
             filesTable.getItems().clear();
             filesTable.getItems().addAll(Files.list(path).filter(Files::isReadable).map(FileInfo::new).collect(Collectors.toList()));
