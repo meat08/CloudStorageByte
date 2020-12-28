@@ -23,7 +23,6 @@ public class MainController {
     private PanelController srcPC = null, dstPC = null;
     private boolean fromClient;
     private Path srcPath, dstPath;
-    private final Network network;
 
     @FXML
     VBox leftPanel, rightPanel;
@@ -42,15 +41,9 @@ public class MainController {
     @FXML
     ProgressBar progressBar;
 
-    public MainController() {
-        network = new Network();
-        AuthUtilClient.setAuthUtilClient(network);
-        FileUtilClient.setFileUtilClient(network);
-    }
-
     public void btnExitAction() {
         Platform.exit();
-        network.stop();
+        Network.getInstance().stop();
     }
 
     public void btnLoginAction() {

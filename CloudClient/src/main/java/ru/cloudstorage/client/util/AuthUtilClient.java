@@ -13,17 +13,12 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 public class AuthUtilClient {
-    private static Network network;
-
-    public static void setAuthUtilClient(Network network) {
-        AuthUtilClient.network = network;
-    }
 
     public static void authorise(String login, String password, Label loginLabel, WaitCallback callback) {
         new Thread(() -> {
             try {
                 sendLoginPassword(login, password, false);
-                byte result = network.getIn().readByte();
+                byte result = Network.getInstance().getIn().readByte();
                 if (result == ByteCommand.ALREADY_AUTH_COMMAND) {
                     setLabelText(loginLabel, "Клиент с таким логином уже подключен");
                 } else if (result == ByteCommand.SUCCESS_AUTH_COMMAND) {
@@ -44,7 +39,7 @@ public class AuthUtilClient {
         new Thread(() -> {
             try {
                 sendLoginPassword(login, password, true);
-                byte result = network.getIn().readByte();
+                byte result = Network.getInstance().getIn().readByte();
                 if (result == ByteCommand.LOGIN_EXIST_COMMAND) {
                     setLabelText(loginLabel, "Клиент с таким логином уже зарегистрирован!");
                 } else if (result == ByteCommand.SUCCESS_AUTH_COMMAND) {
@@ -71,14 +66,14 @@ public class AuthUtilClient {
         buf.putInt(password.length());
         buf.put(password.getBytes());
         buf.flip();
-        network.getCurrentChannel().write(buf);
+        Network.getInstance().getCurrentChannel().write(buf);
     }
 
     public static void setHomeDir(RightPanelController rightPanelController, WaitCallback callback) {
         new Thread(() -> {
             try {
-                network.getOut().write(ByteCommand.GET_ROOT_PATH_COMMAND);
-                DataInputStream in = network.getIn();
+                Network.getInstance().getOut().write(ByteCommand.GET_ROOT_PATH_COMMAND);
+                DataInputStream in = Network.getInstance().getIn();
                 byte result = in.readByte();
                 if (result == ByteCommand.GET_ROOT_PATH_COMMAND) {
                     int rootPathSize = in.readInt();

@@ -14,14 +14,9 @@ import java.nio.file.Path;
 import java.util.List;
 
 public class FileUtilClient {
-    private static Network network;
 
     private static final int BUFFER_SIZE = 1024 * 1024 * 10;
     private static ByteBuffer buf;
-
-    public static void setFileUtilClient(Network network) {
-        FileUtilClient.network = network;
-    }
 
     public static void putFileToServer(Path src, Path dst, ProgressBar progressBar, Label label, WaitCallback callback, ErrorCallback error)  {
         new Thread(() -> {
@@ -43,14 +38,14 @@ public class FileUtilClient {
                 buf.put(dst.toString().getBytes());
                 buf.putLong(fileSize);
                 buf.flip();
-                network.getCurrentChannel().write(buf);
+                Network.getInstance().getCurrentChannel().write(buf);
                 buf = ByteBuffer.allocate(BUFFER_SIZE);
                 long bytesSend = 0;
                 while (bytesSend < fileSize) {
                     int readByte = in.getChannel().read(buf);
                     bytesSend += readByte;
                     buf.flip();
-                    network.getCurrentChannel().write(buf);
+                    Network.getInstance().getCurrentChannel().write(buf);
                     buf.clear();
                     float finalPercent = (float) bytesSend / fileSize;
                     Platform.runLater(() -> {
@@ -59,7 +54,7 @@ public class FileUtilClient {
                     });
                 }
                 in.close();
-                byte result = network.getIn().readByte();
+                byte result = Network.getInstance().getIn().readByte();
                 if (result == ByteCommand.FINISH_COMMAND) {
                     callback.callback();
                 } else {
@@ -81,11 +76,11 @@ public class FileUtilClient {
                 buf.putInt(fileNameBytes.length);
                 buf.put(src.toString().getBytes());
                 buf.flip();
-                network.getCurrentChannel().write(buf);
+                Network.getInstance().getCurrentChannel().write(buf);
                 buf = ByteBuffer.allocate(BUFFER_SIZE);
 
                 long readBytes = 0;
-                long fileSize = network.getIn().readLong();
+                long fileSize = Network.getInstance().getIn().readLong();
                 if (fileSize == 0) {
                     nullFileSizeAlert();
                 }
@@ -93,7 +88,7 @@ public class FileUtilClient {
                     boolean append = true;
                     if (readBytes == 0) append = false;
                     FileOutputStream out = new FileOutputStream(dst.toString(), append);
-                    int read = network.getCurrentChannel().read(buf);
+                    int read = Network.getInstance().getCurrentChannel().read(buf);
                     readBytes += read;
                     buf.flip();
                     out.getChannel().write(buf);
@@ -122,7 +117,7 @@ public class FileUtilClient {
             buf.putInt(fileNameBytes.length);
             buf.put(path.toString().getBytes());
             buf.flip();
-            network.getCurrentChannel().write(buf);
+            Network.getInstance().getCurrentChannel().write(buf);
             buf.clear();
 
         } catch (IOException e) {
@@ -140,10 +135,10 @@ public class FileUtilClient {
                 buf.putInt(pathBytes.length);
                 buf.put(path.getBytes());
                 buf.flip();
-                network.getCurrentChannel().write(buf);
+                Network.getInstance().getCurrentChannel().write(buf);
                 buf.clear();
 
-                DataInputStream in = network.getIn();
+                DataInputStream in = Network.getInstance().getIn();
                 byte result = in.readByte();
                 if (result == ByteCommand.LIST_COMMAND) {
                     int listSize = in.readInt();

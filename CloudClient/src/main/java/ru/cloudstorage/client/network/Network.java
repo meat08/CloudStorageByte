@@ -10,11 +10,16 @@ import java.nio.channels.SocketChannel;
 import java.util.concurrent.CountDownLatch;
 
 public class Network {
+    private static final Network ourInstance = new Network();
     private static final String DEFAULT_HOST = "localhost";
     private static final int DEFAULT_PORT = 8180;
     private DataOutputStream out;
     private DataInputStream in;
     private SocketChannel currentChannel;
+
+    public static Network getInstance() {
+        return ourInstance;
+    }
 
     public DataOutputStream getOut() {
         return out;
@@ -28,7 +33,7 @@ public class Network {
         return currentChannel;
     }
 
-    public Network() {
+    private Network() {
     }
 
     public void start(CountDownLatch countDownLatch) {
