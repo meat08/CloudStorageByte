@@ -20,7 +20,7 @@ public class CloudClient extends Application {
 
     public static void main(String[] args) throws Exception {
         CountDownLatch networkStarter = new CountDownLatch(1);
-        new Thread(() -> new Network().start(networkStarter)).start();
+        new Thread(() -> Network.getInstance().start(networkStarter)).start();
         networkStarter.await();
         launch(args);
     }
